@@ -1,0 +1,14 @@
+version: "1.29.2"
+
+services:
+    mysql:
+        image: mysql/mysql-server:8.0
+        environment: 
+            MYSQL_ROOT_PASSWORD: password
+            MYSQL_DATABASE: demo
+    
+    redis:
+        image: redis
+        environment: 
+            REDIS_ROOT_PASSWORD:
+            REDIS_DATABASE: 0
