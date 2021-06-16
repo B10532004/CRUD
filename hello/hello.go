@@ -23,7 +23,7 @@ type User struct {
 	Password string `json:""`
 }
 
-func main() {
+func ConnectMysql() {
 	dsn := fmt.Sprintf("%s:%s@%s(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", USERNAME, PASSWORD, NETWORK, SERVER, PORT, DATABASE)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
