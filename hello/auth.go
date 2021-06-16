@@ -5,69 +5,133 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-var UserData map[string]string
+type User struct {
+	ID       int64  `json:"id" gorm:"primary_key;auto_increase'"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Phone    string `json:"phone"`
+}
 
-func init() {
-	UserData = map[string]string{
-		"test": "test",
-	}
+var Users []User
+
+func CreateUser(db *gorm.DB, user *User) error {
+	return db.Create(user).Error
+}
+
+func FindUser(db *gorm.DB, username string) error {
+	user := new(User)
+	err := db.Where("Username = ?", username).First(&user).Error
+	return err
+}
+
+func FindPassword(db *gorm.DB, username string, password string) error {
+	user := new(User)
+	err := db.Where("Username = ? AND Password = ?", username, password).First(&user).Error
+	return err
+}
+
+func UpdateUser(db *gorm.DB, username string, newPassword string) error {
+	user := new(User)
+	err := db.Model(&user).Where("Username = ?", username).Update("Password", newPassword).Error
+	return err
+}
+
+func DeleteUser(db *gorm.DB, username string, password string) error {
+	user := new(User)
+	err := db.Where("Username = ? AND Password = ?", username, password).Delete(&user).Error
+	return err
 }
 
 func CheckUserIsExist(username string) bool {
-	_, isExist := UserData[username]
-	return isExist
+	if err := FindUser(MysqlDB, username); err == nil {
+		return true
+	} else {
+		return false
+	}
 }
 
-func CheckPassword(p1 string, p2 string) error {
-	if p1 == p2 {
+func CheckPassword(username string, password string) error {
+	if err := FindPassword(MysqlDB, username, password); err == nil {
 		return nil
 	} else {
 		return errors.New("password is not correct")
 	}
 }
 
-func Auth(username string, password string) error {
-	if isExist := CheckUserIsExist(username); isExist {
-		return CheckPassword(UserData[username], password)
+func Auth(user *User) error {
+	if isExist := CheckUserIsExist(user.Username); isExist {
+		return CheckPassword(user.Username, user.Password)
 	} else {
 		return errors.New("user is not exist")
 	}
 }
 
-func LoginPage(c *gin.Context) {
-	c.HTML(http.StatusOK, "login.html", nil)
+func SignUp(c *gin.Context) {
+	var user User
+	user.Username = c.Request.FormValue("username")
+	user.Password = c.Request.FormValue("password")
+	user.Phone = c.Request.FormValue("phone")
+	if err := CreateUser(MysqlDB, &user); err == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": "註冊成功",
+		})
+		return
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err,
+		})
+		return
+	}
 }
 
 func LoginAuth(c *gin.Context) {
-	var (
-		username string
-		password string
-	)
-	if in, isExist := c.GetPostForm("username"); isExist && in != "" {
-		username = in
-	} else {
-		c.HTML(http.StatusBadRequest, "login.html", gin.H{
-			"error": errors.New("必須輸入使用者名稱"),
-		})
-		return
-	}
-	if in, isExist := c.GetPostForm("password"); isExist && in != "" {
-		password = in
-	} else {
-		c.HTML(http.StatusBadRequest, "login.html", gin.H{
-			"error": errors.New("必須輸入密碼名稱"),
-		})
-		return
-	}
-	if err := Auth(username, password); err == nil {
-		c.HTML(http.StatusOK, "login.html", gin.H{
+	var user User
+	user.Username = c.Request.FormValue("username")
+	user.Password = c.Request.FormValue("password")
+	if err := Auth(&user); err == nil {
+		c.JSON(http.StatusOK, gin.H{
 			"success": "登入成功",
 		})
 		return
 	} else {
-		c.HTML(http.StatusUnauthorized, "login.html", gin.H{
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": err,
+		})
+		return
+	}
+}
+
+func ChangeProfile(c *gin.Context) {
+	var user User
+	user.Username = c.Request.FormValue("username")
+	user.Password = c.Request.FormValue("password")
+	if err := UpdateUser(MysqlDB, user.Username, user.Password); err == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": "更改成功",
+		})
+		return
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": err,
+		})
+		return
+	}
+}
+
+func Destroy(c *gin.Context) {
+	var user User
+	user.Username = c.Request.FormValue("username")
+	user.Password = c.Request.FormValue("password")
+	if err := DeleteUser(MysqlDB, user.Username, user.Password); err == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": "刪除成功",
+		})
+		return
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": err,
 		})
 		return
