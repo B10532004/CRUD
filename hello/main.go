@@ -5,6 +5,7 @@ import "github.com/gin-gonic/gin"
 func main() {
 	r := gin.Default()
 	ConnectMysql()
+	ConnectRedis()
 	r.GET("/users", LoginAuth)
 	r.POST("/user", SignUp)
 	r.PUT("/user/:id", ChangeProfile)

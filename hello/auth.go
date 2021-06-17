@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -33,15 +34,15 @@ func FindPassword(db *gorm.DB, username string, password string) error {
 	return err
 }
 
-func UpdateUser(db *gorm.DB, username string, newPassword string) error {
+func UpdateUser(db *gorm.DB, id int64, newPassword string) error {
 	user := new(User)
-	err := db.Model(&user).Where("Username = ?", username).Update("Password", newPassword).Error
+	err := db.Model(&user).Where("ID = ?", id).Update("Password", newPassword).Error
 	return err
 }
 
-func DeleteUser(db *gorm.DB, username string, password string) error {
+func DeleteUser(db *gorm.DB, id int64) error {
 	user := new(User)
-	err := db.Where("Username = ? AND Password = ?", username, password).Delete(&user).Error
+	err := db.Where("ID = ?", id).Delete(&user).Error
 	return err
 }
 
@@ -106,9 +107,9 @@ func LoginAuth(c *gin.Context) {
 
 func ChangeProfile(c *gin.Context) {
 	var user User
-	user.Username = c.Request.FormValue("username")
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	user.Password = c.Request.FormValue("password")
-	if err := UpdateUser(MysqlDB, user.Username, user.Password); err == nil {
+	if err := UpdateUser(MysqlDB, id, user.Password); err == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": "更改成功",
 		})
@@ -122,10 +123,8 @@ func ChangeProfile(c *gin.Context) {
 }
 
 func Destroy(c *gin.Context) {
-	var user User
-	user.Username = c.Request.FormValue("username")
-	user.Password = c.Request.FormValue("password")
-	if err := DeleteUser(MysqlDB, user.Username, user.Password); err == nil {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err := DeleteUser(MysqlDB, id); err == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": "刪除成功",
 		})
