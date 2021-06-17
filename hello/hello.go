@@ -20,7 +20,8 @@ const (
 
 func ConnectMysql() {
 	dsn := fmt.Sprintf("%s:%s@%s(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", USERNAME, PASSWORD, NETWORK, SERVER, PORT, DATABASE)
-	MysqlDB, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	var err error
+	MysqlDB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("使用 gorm 連線 DB 發生錯誤，原因為 " + err.Error())
 	}

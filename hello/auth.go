@@ -18,6 +18,13 @@ type User struct {
 
 var Users []User
 
+func GetUserList(db *gorm.DB) (list []User, err error) {
+	if err == db.Find(&list).Error {
+		return
+	}
+	return
+}
+
 func CreateUser(db *gorm.DB, user *User) error {
 	return db.Create(user).Error
 }
@@ -88,6 +95,21 @@ func SignUp(c *gin.Context) {
 	}
 }
 
+func UserList(c *gin.Context) {
+	if uuu, err := GetUserList(MysqlDB); err == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success":  "取得成功",
+			"userlist": uuu,
+		})
+		return
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err,
+		})
+		return
+	}
+}
+
 func LoginAuth(c *gin.Context) {
 	var user User
 	user.Username = c.Request.FormValue("username")
@@ -105,7 +127,7 @@ func LoginAuth(c *gin.Context) {
 	}
 }
 
-func ChangeProfile(c *gin.Context) {
+func ChangePassword(c *gin.Context) {
 	var user User
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	user.Password = c.Request.FormValue("password")
