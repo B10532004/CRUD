@@ -10,6 +10,8 @@ import (
 var RedisDB *redis.Client
 var Ctx = context.Background()
 
+const Counter = "counter"
+
 func ConnectRedis() {
 	RedisDB = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
@@ -22,5 +24,9 @@ func ConnectRedis() {
 	} else {
 		log.Fatal("redis 無法連線，錯誤為", err)
 	}
-	RedisDB.Set(Ctx, "counter", 0, 0)
+
+	err = RedisDB.Set(Ctx, Counter, 0, 0).Err()
+	if err != nil {
+		panic(err)
+	}
 }
