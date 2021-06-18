@@ -78,6 +78,7 @@ func Auth(user *User) error {
 }
 
 func SignUp(c *gin.Context) {
+	RedisDB.Incr(Ctx, "counter")
 	var user User
 	user.Username = c.Request.FormValue("username")
 	user.Password = c.Request.FormValue("password")
@@ -96,6 +97,7 @@ func SignUp(c *gin.Context) {
 }
 
 func UserList(c *gin.Context) {
+	RedisDB.Incr(Ctx, "counter")
 	if uuu, err := GetUserList(MysqlDB); err == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success":  "取得成功",
@@ -128,6 +130,7 @@ func LoginAuth(c *gin.Context) {
 }
 
 func ChangePassword(c *gin.Context) {
+	RedisDB.Incr(Ctx, "counter")
 	var user User
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	user.Password = c.Request.FormValue("password")
@@ -145,6 +148,7 @@ func ChangePassword(c *gin.Context) {
 }
 
 func Destroy(c *gin.Context) {
+	RedisDB.Incr(Ctx, "counter")
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err := DeleteUser(MysqlDB, id); err == nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -153,8 +157,19 @@ func Destroy(c *gin.Context) {
 		return
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": err,
+			"error": err.Error(),
+			"123":   err,
 		})
 		return
 	}
+}
+
+func CountAPI(c *gin.Context) {
+	val, err := RedisDB.Get(Ctx, "counter").Result()
+	if err != nil {
+		panic(err)
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"call API times": val,
+	})
 }
